@@ -289,7 +289,7 @@ input,.submit-btn{width:100%;box-sizing:border-box;padding:10px;border-radius:8p
 <button class="submit-btn">Login</button>
 </form>
 <div style="margin-top:5px; text-align:right;">
-<a href="#" onclick="showForgotPassword()" style="color:#2563eb; font-size:13px;">Forgot Password?</a>
+<button type="button" onclick="showForgotPassword()" style="color:#2563eb; font-size:13px; background:none; border:0; padding:0; cursor:pointer;">Forgot Password?</button>
 </div>
 <div class="register-link">
 Don't have an account? <a href="#" onclick="showRegister()">Register here</a>

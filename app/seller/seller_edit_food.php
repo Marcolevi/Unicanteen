@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/common_footer.php';
 require_once __DIR__ . '/../includes/food_images.php';
-session_start(); echo '<style>.sidebar #logoutLink{margin-top:auto!important;margin-bottom:14px!important;background:rgba(220,38,38,.16)!important;color:#fecaca!important;border:1px solid rgba(252,165,165,.25)!important;font-weight:600!important}.sidebar #logoutLink:hover{background:#dc2626!important;color:#fff!important}</style>';
+session_start();
 require_once __DIR__ . '/../../config/db_connection.php';
 
 if (!isset($_SESSION['seller_id'])) {
@@ -81,6 +81,7 @@ if (isset($_POST['ajax_save'])) {
             $response['image']=foodImageDisplayUrl($image);
         }
     }
+    header('Content-Type: application/json');
     echo json_encode($response);
     exit;
 }
@@ -97,8 +98,10 @@ if (isset($_POST['ajax_save'])) {
 body{margin:0;font-family:"Poppins",sans-serif;background:#f1f5f9;color:#0f172a;display:flex;min-height:100vh;}
 .sidebar{width:230px;background:var(--sidebar-bg);color:#fff;height:100vh;position:fixed;display:flex;flex-direction:column;z-index:10;}
 .sidebar h2{margin:0;text-align:center;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.06);font-family:Montserrat, Poppins, sans-serif}
-.sidebar a{color:#cbd5e1;text-decoration:none;padding:0.85rem 1.4rem;display:block;margin:6px 8px;border-radius:8px;transition:0.15s;}
-.sidebar a:hover,.sidebar a.active{background:rgba(0,85,255,.12);color:#fff}
+  .sidebar a{color:#cbd5e1;text-decoration:none;padding:0.85rem 1.4rem;display:block;margin:6px 8px;border-radius:8px;transition:0.15s;}
+  .sidebar a:hover,.sidebar a.active{background:rgba(0,85,255,.12);color:#fff}
+  .sidebar #logoutLink{margin-top:auto!important;margin-bottom:14px!important;background:rgba(220,38,38,.16)!important;color:#fecaca!important;border:1px solid rgba(252,165,165,.25)!important;font-weight:600!important}
+  .sidebar #logoutLink:hover{background:#dc2626!important;color:#fff!important}
 .main{margin-left:230px;padding:1.5rem;flex:1;display:flex;flex-direction:column;min-height:100vh;}
 .main > footer { margin-top:auto; }
 .topbar{background:white;padding:16px 28px;border-radius:14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
@@ -348,7 +351,10 @@ form.addEventListener('submit', function(e){
             alert(data.message); // error from backend
         }
     })
-    .catch(err => console.error('AJAX error:', err));
+    .catch(err => {
+        console.error('AJAX error:', err);
+        alert('Unable to save the food item. Please try again.');
+    });
 });
 
 

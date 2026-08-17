@@ -534,6 +534,26 @@ function showTab(tab,btn){
   btn.classList.add("active");
 }
 
+const ordersLink = document.querySelector('.sidebar a[href="/Ordering/app/seller/seller_dashboard.php"]');
+if (ordersLink) {
+    const ordersBadge = document.createElement('span');
+    ordersBadge.id = 'sideBadge';
+    ordersBadge.setAttribute('aria-label', 'Pending orders');
+    Object.assign(ordersLink.style, {display: 'flex', alignItems: 'center', gap: '8px'});
+    Object.assign(ordersBadge.style, {display: 'none', marginLeft: 'auto', minWidth: '20px', height: '20px', padding: '0 6px', borderRadius: '999px', background: '#ef2b35', color: '#fff', font: '700 12px/20px Arial,sans-serif', textAlign: 'center'});
+    ordersLink.appendChild(ordersBadge);
+    const updateOrdersBadge = () => fetch('/Ordering/app/seller/seller_dashboard.php?action=fetch&_=' + Date.now(), {cache: 'no-store', credentials: 'same-origin'})
+        .then(response => response.ok ? response.json() : Promise.reject())
+        .then(data => {
+            const count = Array.isArray(data.orders) ? data.orders.filter(order => order.status === 'pending').length : 0;
+            ordersBadge.textContent = count;
+            ordersBadge.style.display = count ? 'inline-block' : 'none';
+        })
+        .catch(() => { ordersBadge.style.display = 'none'; });
+    updateOrdersBadge();
+    setInterval(updateOrdersBadge, 15000);
+}
+
 const toggleLink = document.getElementById('toggleChangePassword');
 const currentPasswordInput = document.getElementById('current_password');
 const newPassContainer = document.getElementById('newPassContainer');
@@ -566,6 +586,15 @@ toggleLink.addEventListener('click', () => {
 
 
 // Client-side password policy guidance; the server enforces the same policy.
+newPassInput.addEventListener('input', function(){
+    const value = newPassInput.value;
+    const meetsPolicy = value.length >= 8 && /[a-z]/.test(value) &&
+        /[A-Z]/.test(value) && /\d/.test(value) && /[^a-zA-Z\d]/.test(value);
+    passHint.textContent = value && !meetsPolicy
+        ? 'Weak password: use 8+ characters with uppercase, lowercase, a number, and a special character.'
+        : 'Use 8+ characters with uppercase, lowercase, a number, and a special character.';
+    passHint.style.color = value && !meetsPolicy ? '#f43f5e' : '#64748b';
+});
 document.querySelector('form[name="update_profile_form"]').addEventListener('submit', function(e){
     if(newPassContainer.style.display === 'block'){
         const newPass = newPassInput.value;

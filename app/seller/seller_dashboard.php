@@ -406,7 +406,7 @@ footer {
 <h2>UniCanteen</h2>
 
 <!-- 🔴 MOVED BADGE HERE -->
-<a href="#" class="active">
+<a href="/Ordering/app/seller/seller_dashboard.php" class="active">
    Food Orders
    <span id="sideBadge" class="side-badge">0</span>
 </a>

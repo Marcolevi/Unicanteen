@@ -253,7 +253,7 @@ footer {
             <div class="form-group password-container"><label>Current Password</label><input type="password" name="current_pass" id="current_pass" placeholder="Enter current password" disabled required></div>
             <div class="form-group password-container"><label>New Password</label><input type="password" name="new_pass" id="new_pass" placeholder="Enter new password" minlength="8" title="Use at least 8 characters, including uppercase, lowercase, a number, and a special character." disabled required></div>
             <div class="form-group password-container"><label>Confirm New Password</label><input type="password" name="confirm_pass" id="confirm_pass" placeholder="Confirm new password" disabled required></div>
-            <small>Use 8+ characters with uppercase, lowercase, a number, and a special character.</small>
+            <small id="passwordWarning" style="display:none;color:#be123c;font-weight:600;">Weak password: use 8+ characters with uppercase, lowercase, a number, and a special character.</small>
             <div class="form-footer" style="text-align: right;">
                 <button type="button" class="cancel-btn" onclick="togglePasswordEdit(false)">Cancel</button>
                 <button type="submit" class="save-btn" disabled>Save Changes</button>
@@ -372,6 +372,9 @@ function togglePasswordEdit(enable){
 }
 pwInputs.forEach(input => input.addEventListener('input', ()=>{
     pwSaveBtn.disabled = !Array.from(pwInputs).some(i => i.value.trim() !== '');
+    const newPassword = document.getElementById('new_pass').value;
+    const weak = newPassword.length > 0 && !(newPassword.length >= 8 && /[a-z]/.test(newPassword) && /[A-Z]/.test(newPassword) && /\d/.test(newPassword) && /[^a-zA-Z\d]/.test(newPassword));
+    document.getElementById('passwordWarning').style.display = weak ? 'block' : 'none';
 }));
 
 function togglePassword(icon) {
