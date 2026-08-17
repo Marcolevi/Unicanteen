@@ -1,0 +1,1 @@
+<?php require __DIR__ . '/app/pages/general/about_us.php';
