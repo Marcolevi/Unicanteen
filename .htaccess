@@ -1,0 +1,14 @@
+DirectoryIndex app/auth/login_register.php
+AddDefaultCharset UTF-8
+
+RewriteEngine On
+
+# Keep established root-level URLs working after the role-based file move.
+RewriteRule ^(admin_(?:account_support|dashboard|login|operations|orders|portal|users))\.php$ app/admin/$1.php [L]
+RewriteRule ^(login_register|logout|reset_password|reset_password_otp|verify_email)\.php$ app/auth/$1.php [L]
+RewriteRule ^student_dashboard\.php$ app/student/student_dashboard.php [L]
+RewriteRule ^(student_(?:fetch_seats|menu_state|visible_canteens))\.php$ app/student/actions/$1.php [L]
+RewriteRule ^(seller_(?:add_seat|clear_all_orders|delete_food|delete_seat|fetch_foods|fetch_seats|update_seat|update_status))\.php$ app/seller/actions/$1.php [L]
+RewriteRule ^(seller_(?:add_food|analytics|dashboard|edit_food|menu|notifications|profile|seats))\.php$ app/seller/$1.php [L]
+RewriteRule ^(add_to_cart|cancel_order|clear_cart|edit_food_ajax|fetch_cart|place_order|remove_food_image|reserve_seat|set_current_canteen|update_cart|update_password|update_profile)\.php$ app/general/actions/$1.php [L]
+RewriteRule ^(about_us|canteen_menu|careers|my_orders|news|profile|student_receipt)\.php$ app/general/$1.php [L]

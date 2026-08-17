@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config/mailer.php';
+require_once __DIR__ . '/../../config/mailer.php';
 
 /**
  * Sends one order-status email and records the delivery result. A previously
