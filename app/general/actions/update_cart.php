@@ -298,7 +298,9 @@ switch($action) {
         if ($payment_method === 'gcash_sandbox' && $payment_reference === '') {
             json_exit(['status'=>'error','msg'=>'Complete the GCash sandbox payment first']);
         }
-        $payment_status = $payment_method === 'gcash_sandbox' ? 'paid_sandbox' : 'unpaid';
+        // The sandbox confirmation is the application's GCash payment
+        // confirmation. Treat it as paid so it is included in sales reports.
+        $payment_status = $payment_method === 'gcash_sandbox' ? 'paid' : 'unpaid';
         $seat_param = trim($seat ?? '');
 
         $cart_json = $_POST['cart'] ?? '';
@@ -412,8 +414,9 @@ switch($action) {
         }
 
         // Update order info (total, mode, seat)
-        $upd = $conn->prepare("UPDATE orders SET total=?, mode=?, seat_numbers=?, payment_method=?, payment_status=?, payment_reference=? WHERE id=?");
-        $upd->bind_param("dsssssi",$total,$order_type,$seat_param,$payment_method,$payment_status,$payment_reference,$order_id);
+        $paymentConfirmedAt = $payment_method === 'gcash_sandbox' ? date('Y-m-d H:i:s') : null;
+        $upd = $conn->prepare("UPDATE orders SET total=?, mode=?, seat_numbers=?, payment_method=?, payment_status=?, payment_reference=?, payment_confirmed_at=? WHERE id=?");
+        $upd->bind_param("dssssssi",$total,$order_type,$seat_param,$payment_method,$payment_status,$payment_reference,$paymentConfirmedAt,$order_id);
         $upd->execute();
         $upd->close();
 

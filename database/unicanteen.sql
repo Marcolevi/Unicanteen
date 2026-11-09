@@ -124,7 +124,8 @@ CREATE TABLE `orders` (
   `cancelled_by` enum('student','seller','system') DEFAULT NULL,
   `payment_method` varchar(30) NOT NULL DEFAULT 'cash',
   `payment_status` varchar(30) NOT NULL DEFAULT 'unpaid',
-  `payment_reference` varchar(100) DEFAULT NULL
+  `payment_reference` varchar(100) DEFAULT NULL,
+  `payment_confirmed_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 --
 -- Dumping data for table `orders`

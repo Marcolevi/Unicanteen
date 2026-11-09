@@ -285,9 +285,10 @@ tr:hover{background-color:#f9fafb;}
 button.cancel-btn{background:#dc2626;color:white;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-weight:600;}
 button.cancel-btn:hover{background:#b91c1c;}
 button.cancel-btn[disabled]{background:#9ca3af;cursor:not-allowed;}
-.receipt-btn{display:inline-block;text-decoration:none;background:#2563eb;color:#fff;border-radius:6px;padding:6px 12px;margin-left:6px;font-weight:600;}
+.receipt-btn{display:inline-block;text-decoration:none;background:#2563eb;color:#fff;border-radius:6px;padding:6px 12px;font-weight:600;}
 .receipt-btn:hover{background:#1d4ed8;}
 button.cancel-btn,.receipt-btn{font-family:inherit;font-size:13px;line-height:normal;padding:6px 12px;}
+#completed th:last-child,#completed td:last-child,#cancelled th:last-child,#cancelled td:last-child{display:none;}
 .tab-content{display:none;}
 .tab-content.active{display:block;}
 #toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:12px 18px;border-radius:8px;opacity:0;transition:0.25s;z-index:1000}
@@ -503,14 +504,14 @@ footer {
     <div id="completed" class="tab-content">
       <table>
         <thead><tr><th>Order ID</th><th>Canteen</th><th>Type</th><th>Table No.</th><th>Foods Ordered</th><th>Total</th><th>Payment</th><th>Status</th><th>Action</th></tr></thead>
-        <tbody id="completed-body"><tr><td colspan="9">No completed orders.</td></tr></tbody>
+        <tbody id="completed-body"><tr><td colspan="8">No completed orders.</td></tr></tbody>
       </table>
     </div>
 
     <div id="cancelled" class="tab-content">
       <table>
         <thead><tr><th>Order ID</th><th>Canteen</th><th>Type</th><th>Table No.</th><th>Foods Ordered</th><th>Total</th><th>Payment</th><th>Status</th><th>Action</th></tr></thead>
-        <tbody id="cancelled-body"><tr><td colspan="9">No cancelled orders.</td></tr></tbody>
+        <tbody id="cancelled-body"><tr><td colspan="8">No cancelled orders.</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -663,8 +664,9 @@ function escapeHtml(s){
 function createRow(o){
   const status=o.status.toLowerCase().trim();
   const disabled = (status==='completed'||status==='cancelled')?'disabled':''; 
-  const action = status==='pending'?`<button class="cancel-btn" data-id="${o.id}" ${disabled}>Cancel</button>`:'—';
-  const receipt = status !== 'cancelled' ? `<a class="receipt-btn" href="/Ordering/app/general/student_receipt.php?order_id=${o.id}" target="_blank">Receipt PDF</a>` : '';
+  const action = status==='pending'?`<button class="cancel-btn" data-id="${o.id}" ${disabled}>Cancel</button>`:'';
+  // A receipt is available only after the seller has accepted the order.
+  const receipt = status === 'preparing' ? `<a class="receipt-btn" href="/Ordering/app/general/student_receipt.php?order_id=${o.id}" target="_blank" rel="noopener">Receipt PDF</a>` : '';
   const paymentMethod = o.payment_method === 'gcash_sandbox' ? 'GCash' : 'Cash on pickup';
   const paymentStatus = o.payment_status === 'paid' ? 'Paid' : (o.payment_status === 'paid_sandbox' ? 'Payment preview' : 'Unpaid');
   return `<tr data-id="${o.id}">
@@ -755,7 +757,8 @@ function fetchOrdersRealtime(autoSwitchTab=false){
     ['pending','preparing','completed','cancelled'].forEach(tab=>{
       const tbody = document.getElementById(tab+'-body');
       const rows = groups[tab] || [];
-      tbody.innerHTML = rows.length ? '' : `<tr><td colspan="9">No ${tab} orders.</td></tr>`;
+      const columnCount = ['completed', 'cancelled'].includes(tab) ? 8 : 9;
+      tbody.innerHTML = rows.length ? '' : `<tr><td colspan="${columnCount}">No ${tab} orders.</td></tr>`;
       rows.forEach(r=>tbody.insertAdjacentHTML('beforeend',createRow(r)));
     });
     attachCancelEvents();

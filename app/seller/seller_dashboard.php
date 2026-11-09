@@ -132,7 +132,7 @@ if ($_GET['action']==='mark_completed') {
 if ($_GET['action']==='mark_paid') {
     $id = (int)$_POST['order_id'];
     if ($id <= 0) { echo json_encode(['status'=>'error','msg'=>'Invalid order']); exit; }
-    $stmt = $conn->prepare("UPDATE orders SET payment_status='paid' WHERE id=? AND seller_id=? AND LOWER(status)='completed' AND payment_method='cash' AND payment_status='unpaid'");
+    $stmt = $conn->prepare("UPDATE orders SET payment_status='paid', payment_confirmed_at=NOW() WHERE id=? AND seller_id=? AND LOWER(status)='completed' AND payment_method='cash' AND payment_status='unpaid'");
     $stmt->bind_param("ii", $id, $seller_id);
     $stmt->execute();
     $updated = $stmt->affected_rows;
@@ -299,6 +299,7 @@ th,td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:center}
 .cancel-btn:hover{background: #cc2424ff;}
 .mark-completed-btn{background:#2563eb;color:white;border:none;padding:6px 12px;border-radius:6px;font-weight:600;}
 .no-orders{text-align:center;color:#6b7280;padding:15px}
+#completed th:last-child,#completed td:last-child,#cancelled th:last-child,#cancelled td:last-child{display:none}
 .tab{display:none}
 .tab.active{display:block}
 .uc-modal-overlay {position: fixed;inset: 0;background: rgba(0,0,0,0.45);display: none;justify-content: center;align-items: center;z-index: 99999;backdrop-filter: blur(3px);}
@@ -608,7 +609,8 @@ function showModal(title, message, buttons){
 // ROW GENERATOR
 // -------------------
 function row(o){
-  let action = '—';
+  let action = '';
+  let paymentControl = '';
   if(o.status === 'pending'){
     action = `<button class="accept-btn" onclick="updateOrder(${o.id},'accept')">Accept</button>
               <button class="cancel-btn" onclick="updateOrder(${o.id},'cancel')">Decline</button>`;
@@ -617,7 +619,7 @@ function row(o){
     action = `<button class="mark-completed-btn" onclick="completeOrder(${o.id})">Complete</button>`;
   }
   if(o.status === 'completed' && o.payment_method === 'cash' && o.payment_status === 'unpaid'){
-    action = `<button class="accept-btn" onclick="markPaid(${o.id})">Mark as Paid</button>`;
+    paymentControl = `<br><button class="accept-btn" onclick="markPaid(${o.id})">Mark as Paid</button>`;
   }
   const paymentMethod = o.payment_method === 'gcash_sandbox' ? 'GCash' : 'Cash on pickup';
   const paymentStatus = o.payment_status === 'paid' ? 'Paid' : (o.payment_status === 'paid_sandbox' ? 'Payment preview' : 'Unpaid');
@@ -630,7 +632,7 @@ function row(o){
 <td>${o.seat_numbers||'-'}</td>
 <td>${o.items}</td>
 <td>₱${o.total}</td>
-<td><strong>${paymentMethod}</strong><br><small>${paymentStatus}</small>${paymentReference}</td>
+<td><strong>${paymentMethod}</strong><br><small>${paymentStatus}</small>${paymentReference}${paymentControl}</td>
 <td><span class="status ${o.status}">${o.status}</span></td>
 <td>${action}</td>
 </tr>`;
@@ -763,7 +765,8 @@ function loadOrders(){
       const body=document.getElementById(tab+'-body');
       body.innerHTML='';
       if(!groups[tab].length){
-        body.innerHTML=`<tr><td colspan="9" class="no-orders">No orders</td></tr>`;
+        const columnCount = ['completed', 'cancelled'].includes(tab) ? 8 : 9;
+        body.innerHTML=`<tr><td colspan="${columnCount}" class="no-orders">No orders</td></tr>`;
         return;
       }
       groups[tab].forEach(o=>body.innerHTML+=row(o));

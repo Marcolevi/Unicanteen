@@ -61,5 +61,5 @@ Open this in your browser:
 ['http://localhost/Ordering/admin_login.php']
 
 Then enter:
-Email: [  Unicanteen.isucyn@gmail.com]
+Email: ['Unicanteen.isucyn@gmail.com']
 Password: Admin@12345

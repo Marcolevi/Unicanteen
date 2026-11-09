@@ -14,7 +14,7 @@ $studentRow = $student->get_result()->fetch_assoc();
 $student->close();
 if (!$studentRow) { http_response_code(403); exit('Student account not found.'); }
 
-$order = $conn->prepare("SELECT o.*, c.canteen_name FROM orders o JOIN canteens c ON c.id=o.canteen_id WHERE o.id=? AND o.student_id=? AND LOWER(o.status) <> 'cancelled' LIMIT 1");
+$order = $conn->prepare("SELECT o.*, c.canteen_name FROM orders o JOIN canteens c ON c.id=o.canteen_id WHERE o.id=? AND o.student_id=? AND LOWER(o.status)='preparing' LIMIT 1");
 $order->bind_param('ii', $orderId, $studentRow['id']);
 $order->execute();
 $orderRow = $order->get_result()->fetch_assoc();
@@ -32,7 +32,8 @@ function pdfText($value) {
 }
 
 $paymentMethod = ($orderRow['payment_method'] ?? 'cash') === 'gcash_sandbox' ? 'GCash' : 'Cash on pickup';
-$paymentStatus = ($orderRow['payment_status'] ?? 'unpaid') === 'paid_sandbox' ? 'Payment preview' : 'Unpaid';
+$paymentState = $orderRow['payment_status'] ?? 'unpaid';
+$paymentStatus = $paymentState === 'paid' ? 'Paid' : ($paymentState === 'paid_sandbox' ? 'Payment preview' : 'Unpaid');
 $lines = ['UNICANTEEN - ORDER RECEIPT', '----------------------------------------------', 'Order number: #' . $orderRow['id'], 'Student: ' . $studentRow['full_name'], 'Canteen: ' . $orderRow['canteen_name'], 'Order type: ' . ($orderRow['mode'] ?: 'Take-out'), 'Table: ' . ($orderRow['seat_numbers'] ?: '-'), 'Order date: ' . $orderRow['created_at'], '----------------------------------------------', 'ITEMS'];
 while ($item = $itemResult->fetch_assoc()) {
     $lines[] = sprintf('%dx %s - PHP %.2f', (int)$item['quantity'], $item['name'] ?: 'Item', (float)$item['price'] * (int)$item['quantity']);

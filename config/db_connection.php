@@ -41,6 +41,7 @@ $paymentColumns = [
     'payment_method' => "VARCHAR(30) NOT NULL DEFAULT 'cash'",
     'payment_status' => "VARCHAR(30) NOT NULL DEFAULT 'unpaid'",
     'payment_reference' => 'VARCHAR(100) DEFAULT NULL',
+    'payment_confirmed_at' => 'DATETIME DEFAULT NULL',
 ];
 foreach ($paymentColumns as $column => $definition) {
     $escaped = $conn->real_escape_string($column);
