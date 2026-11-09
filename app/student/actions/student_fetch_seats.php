@@ -2,6 +2,8 @@
 session_start();
 require_once __DIR__ . '/../../../config/db_connection.php';
 header('Content-Type: application/json; charset=UTF-8');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
 
 // ------------------------------
 // Check if student is logged in

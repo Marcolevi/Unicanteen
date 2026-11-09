@@ -32,7 +32,8 @@ CREATE TABLE `canteens` (
   `canteen_name` varchar(150) NOT NULL,
   `description` text DEFAULT NULL,
   `image` longblob DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `is_active` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -163,12 +164,94 @@ CREATE TABLE `students` (
   `contact` varchar(20) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `reset_token` varchar(255) DEFAULT NULL,
-  `reset_expires` datetime DEFAULT NULL
+  `reset_expires` datetime DEFAULT NULL,
+  `email_notifications_enabled` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `students`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Supporting tables used by administrator, registration, recovery, email,
+-- and in-app notification features. SMS notification storage is intentionally
+-- excluded: UniCanteen no longer uses SMS delivery.
+--
+
+CREATE TABLE `admins` (
+  `id` int(11) NOT NULL,
+  `full_name` varchar(150) NOT NULL,
+  `email` varchar(150) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `announcements` (
+  `id` int(11) NOT NULL,
+  `title` varchar(180) NOT NULL,
+  `message` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `admin_audit_log` (
+  `id` int(11) NOT NULL,
+  `admin_id` int(11) NOT NULL,
+  `action_text` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `pending_registrations` (
+  `id` int(11) NOT NULL,
+  `user_type` varchar(10) NOT NULL,
+  `user_identifier` varchar(50) DEFAULT NULL,
+  `full_name` varchar(150) NOT NULL,
+  `email` varchar(150) NOT NULL,
+  `contact` varchar(30) DEFAULT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `otp_hash` varchar(255) NOT NULL,
+  `otp_expires_at` datetime NOT NULL,
+  `otp_attempts` tinyint(4) NOT NULL DEFAULT 0,
+  `resend_available_at` datetime NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `password_reset_otps` (
+  `id` int(11) NOT NULL,
+  `user_type` varchar(10) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `email` varchar(150) NOT NULL,
+  `otp_hash` varchar(255) NOT NULL,
+  `otp_expires_at` datetime NOT NULL,
+  `otp_attempts` tinyint(4) NOT NULL DEFAULT 0,
+  `resend_available_at` datetime NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `email_notifications` (
+  `id` int(11) NOT NULL,
+  `student_id` int(11) NOT NULL,
+  `order_id` int(11) NOT NULL,
+  `notification_type` varchar(50) NOT NULL,
+  `recipient_email` varchar(150) NOT NULL,
+  `subject` varchar(180) NOT NULL,
+  `message` text NOT NULL,
+  `status` varchar(20) NOT NULL,
+  `error_message` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `sent_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE `notifications` (
+  `id` int(11) NOT NULL,
+  `seller_id` int(11) NOT NULL,
+  `student_id` int(11) NOT NULL,
+  `order_id` int(11) NOT NULL DEFAULT 0,
+  `message` text NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'unread',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Indexes for dumped tables
@@ -225,6 +308,33 @@ ALTER TABLE `students`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `student_id` (`student_id`);
 
+ALTER TABLE `admins`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `email` (`email`);
+
+ALTER TABLE `announcements`
+  ADD PRIMARY KEY (`id`);
+
+ALTER TABLE `admin_audit_log`
+  ADD PRIMARY KEY (`id`);
+
+ALTER TABLE `pending_registrations`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `email` (`email`);
+
+ALTER TABLE `password_reset_otps`
+  ADD PRIMARY KEY (`id`);
+
+ALTER TABLE `email_notifications`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `email_notification_once` (`student_id`,`order_id`,`notification_type`);
+
+ALTER TABLE `notifications`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_notifications_seller_created` (`seller_id`,`created_at`),
+  ADD KEY `idx_notifications_student_created` (`student_id`,`created_at`),
+  ADD KEY `idx_notifications_order` (`order_id`);
+
 --
 -- AUTO_INCREMENT for dumped tables
 --
@@ -233,43 +343,64 @@ ALTER TABLE `students`
 -- AUTO_INCREMENT for table `canteens`
 --
 ALTER TABLE `canteens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `foods`
 --
 ALTER TABLE `foods`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=65;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=322;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=406;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `seats`
 --
 ALTER TABLE `seats`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `sellers`
 --
 ALTER TABLE `sellers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `students`
 --
 ALTER TABLE `students`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `admins`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `announcements`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `admin_audit_log`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `pending_registrations`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `password_reset_otps`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `email_notifications`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `notifications`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- Constraints for dumped tables

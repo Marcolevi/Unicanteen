@@ -543,6 +543,8 @@ let orderType = null;
 let selectedSeat = null;
 let currentView = 'canteens';
 let cart = [];
+let lastSeatState = '';
+let seatRefreshInFlight = false;
 
 // Keep the available canteen list in sync with administrator approvals without
 // interrupting a student who is actively building an order.
@@ -603,6 +605,14 @@ document.addEventListener('DOMContentLoaded', () => {
     attachGlobalListeners();
     renderCart([]);
 });
+
+// Table updates are made by sellers on a separate page. Refresh only while the
+// student is looking at the dine-in table picker, so availability changes show
+// up without a page reload and without unnecessary background requests.
+setInterval(() => {
+    if (currentView !== 'seats' || !currentCanteenId || document.hidden) return;
+    renderSeats({ preserveSelection: true, onlyWhenChanged: true });
+}, 2000);
 
 // ---------------------------
 // GLOBAL LISTENERS
@@ -941,20 +951,34 @@ function goBackToCanteens() {
 // ---------------------------
 // RENDER SEATS
 // ---------------------------
-async function renderSeats(){
-    seatGrid.innerHTML='';
+async function renderSeats({ preserveSelection = false, onlyWhenChanged = false } = {}){
+    if (!currentCanteenId || seatRefreshInFlight) return;
+    seatRefreshInFlight = true;
     try{
-        const res = await fetch(`/Ordering/app/student/actions/student_fetch_seats.php?canteen_id=${currentCanteenId}`);
+        const res = await fetch(`/Ordering/app/student/actions/student_fetch_seats.php?canteen_id=${encodeURIComponent(currentCanteenId)}&_=${Date.now()}`, { cache: 'no-store' });
         const data = await res.json();
         if(data.status!=='success'){
-            seatGrid.innerHTML='<p style="color:red;">Failed loading seats</p>';
+            if (!onlyWhenChanged) seatGrid.innerHTML='<p style="color:red;">Failed loading seats</p>';
             return;
         }
+
+        const seatState = JSON.stringify(data.seats.map(seat => [seat.id, seat.seat_number, seat.available]));
+        if (onlyWhenChanged && seatState === lastSeatState) return;
+        lastSeatState = seatState;
+
+        // A seller can reserve, rename, or remove a table after it was picked.
+        // Keep a still-valid choice, otherwise require the student to choose again.
+        const selectedStillAvailable = data.seats.some(seat => seat.available && seat.seat_number === selectedSeat);
+        if (!preserveSelection || !selectedStillAvailable) selectedSeat = null;
+
+        seatGrid.innerHTML='';
 
         data.seats.forEach(seat=>{
             const div = document.createElement('div');
             div.className = 'seat-box ' + (seat.available ? 'available' : 'reserved');
             div.textContent = seat.seat_number;
+
+            if (seat.available && seat.seat_number === selectedSeat) div.classList.add('selected');
 
             if(seat.available){
                 div.onclick = () => {
@@ -967,7 +991,9 @@ async function renderSeats(){
         });
     } catch(err){
         console.error(err);
-        seatGrid.innerHTML='<p>Error loading seats</p>';
+        if (!onlyWhenChanged) seatGrid.innerHTML='<p>Error loading seats</p>';
+    } finally {
+        seatRefreshInFlight = false;
     }
 }
 

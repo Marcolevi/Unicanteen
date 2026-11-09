@@ -44,15 +44,6 @@ Administrators use the same code-based recovery flow from
 `admin_login.php` → **Forgot Password**. The old reset-link route now returns
 to the login page and is no longer a valid recovery method.
 
-## SMS notifications
-
-Semaphore SMS notifications use `SEMAPHORE_API_KEY` and
-`SEMAPHORE_SENDER_NAME` from `.env`. Student contact numbers are normalized to
-Philippine E.164 format. Notifications are recorded in `sms_notifications`;
-the same event is never sent twice. API failures are recorded without blocking
-orders or reservations. The migration also runs automatically on connection;
-the standalone SQL is in `database/sms_notifications.sql`.
-
 ## Demo payments
 
 The cart includes a **GCash (Sandbox demo)** option that generates a demo QR
